@@ -1,0 +1,45 @@
+- name: Configuring the datanode
+  hosts: "{{ host }}"
+  vars_prompt:
+  - name: host
+    prompt: "Enter the host (eg: all)"
+    private: no
+  - name: namenode
+    prompt: "Enter the IP of the namenode"
+    private: no
+  vars:
+    - dir: /datanode
+    - node: data
+    - ip: "{{ namenode }}"
+    - port: 9001
+  tasks:
+  - name: copying the java jdk
+    copy:
+      src: "/root/jdk-8u171-linux-x64.rpm"
+      dest: "/root" 
+  - name: copying the hadoop software
+    copy:
+      src: "/root/hadoop-1.2.1-1.x86_64.rpm"
+      dest: "/root"
+  - name: installing the jdk and hadoop
+    block:
+    - name: "Checking hadoop"
+      command: "rpm -q hadoop"
+      changed_when: False
+    rescue:
+    - name: "Installing hadoop"
+      command: "rpm -i /root/hadoop-1.2.1-1.x86_64.rpm  --force -y"
+  - name: "Copying hdfs.xml"
+    template:
+      src: "hdfs-site.xml"
+      dest: "/etc/hadoop"
+  - name: copying core-site.xml
+    template:
+      src: "core-site.xml"
+      dest: "/etc/hadoop"
+  - name: "Creating Datanode Directory"
+    file:
+      path: "{{ dir }}"
+      state: "directory"
+  - name: "start hadoop"
+    command: "hadoop-daemon.sh start datanode"  
